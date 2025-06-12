@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: IMF Gadget Inventory API
+  description: API for managing spy gadgets within IMF's inventory system.
+  version: 1.0.0
+  contact:
+    name: Siddharth Aasal
+    url: https://imf-gadget-inventory.onrender.com/
+servers:
+  - url: https://imf-gadget-inventory.onrender.com
+    description: Render deployment
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Gadgets
+    description: Gadget management endpoints
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User created
+        '400':
+          description: User already exists
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout agent
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /gadgets:
+    get:
+      tags: [Gadgets]
+      summary: Get all gadgets or filter by status
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [Available, Deployed, Decommissioned, Destroyed]
+          description: Filter gadgets by status
+      responses:
+        '200':
+          description: List of gadgets
+        '400':
+          description: Invalid status
+
+    post:
+      tags: [Gadgets]
+      summary: Add new gadget
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gadgetName]
+              properties:
+                gadgetName:
+                  type: string
+      responses:
+        '201':
+          description: Gadget created
+        '400':
+          description: Gadget name missing
+        '401':
+          description: Unauthorized – Login required
+
+  /gadgets/{id}:
+    patch:
+      tags: [Gadgets]
+      summary: Rename gadget
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newName]
+              properties:
+                newName:
+                  type: string
+      responses:
+        '202':
+          description: Gadget updated
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized – Login required
+
+    delete:
+      tags: [Gadgets]
+      summary: Soft delete (decommission) a gadget
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Gadget decommissioned
+        '400':
+          description: ID missing
+        '401':
+          description: Unauthorized – Login required
+
+  /gadgets/{id}/self-destruct:
+    post:
+      tags: [Gadgets]
+      summary: Destroy gadget irreversibly
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Self-destruct initiated
+        '404':
+          description: Gadget not found
+        '401':
+          description: Unauthorized – Login required
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
